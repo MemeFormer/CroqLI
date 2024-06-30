@@ -34,7 +34,10 @@ def read_command_history(file_path: Path, num_entries: int = 100) -> List[str]:
 def update_cheat_sheet(cheat_sheet_path: Path, key: str, value: Any) -> None:
     """Update a specific entry in the cheat sheet."""
     cheat_sheet = read_json_file(cheat_sheet_path)
-    cheat_sheet[key] = value
+    if isinstance(cheat_sheet[key], dict):
+        cheat_sheet[key].update(value)
+    else:
+        cheat_sheet[key] = value
     write_json_file(cheat_sheet_path, cheat_sheet)
 
 def get_cheat_sheet_value(cheat_sheet_path: Path, key: str) -> Any:
@@ -46,10 +49,12 @@ def initialize_cheat_sheet(cheat_sheet_path: Path) -> None:
     """Initialize the cheat sheet with default values if it doesn't exist."""
     if not cheat_sheet_path.exists():
         default_cheat_sheet = {
-            "brew_installed": False,
-            "python_path": "/usr/bin/python",
-            "favorite_directories": ["~/Documents", "~/Downloads"],
-            "system_info_collected": False
+            "os": "",
+            "shell": "",
+            "package_manager": "",
+            "installed_apps": {},
+            "common_paths": {},
+            "custom_aliases": {}
         }
         write_json_file(cheat_sheet_path, default_cheat_sheet)
 

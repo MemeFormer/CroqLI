@@ -3,26 +3,14 @@
 from src.services.tavily_api import TavilyService
 from src.ui.display import render_markdown
 from src.config import load_config
+from src.ui.prompts import prompt_user_input
 from groq import Groq
 
 class SearchModule:
-    def __init__(self):
-        self.config = load_config()
+    def __init__(self, config):
+        self.config = config
         self.tavily_service = TavilyService()
-        self.groq_client = Groq(api_key=self.config.groq_api_key)
-
-    def search_mode(config, console):
-        search_module = SearchModule()
-    
-        while True:
-            query = console.input("Enter your search query (or 'exit' to quit): ")
-            if query.lower() == 'exit':
-                break
-        
-        result = search_module.search(query)
-        console.print("Search Results:", style="bold")
-        render_markdown(result, console)
-
+        self.groq_client = Groq(api_key=self.config.get('groq_api_key'))
 
     def fetch_and_process_tavily(self, query):
         """Fetch and process data from Tavily."""
@@ -33,10 +21,10 @@ class SearchModule:
         prompt = f"Summarize the following information: {context}"
         summary = self.groq_client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model=self.config.groq_model,
-            max_tokens=self.config.max_tokens,
-            temperature=self.config.temperature,
-            top_p=self.config.top_p
+            model=self.config.get('groq_model'),
+            max_tokens=self.config.get('max_tokens'),
+            temperature=self.config.get('temperature'),
+            top_p=self.config.get('top_p')
         ).choices[0].message.content
         return summary
 
@@ -50,22 +38,29 @@ class SearchModule:
             return f"An error occurred during the search: {str(e)}"
 
 def search_mode(config, console):
-    search_module = SearchModule()
+    search_module = SearchModule(config)
+    
+    console.print("Welcome to Search Mode. Type '/menu' to return to the main menu or 'exit' to quit.", style="bold blue")
     
     while True:
-        query = input("Enter your search query (or 'exit' to quit): ")
+        query = prompt_user_input("Search")
+        
         if query.lower() == 'exit':
+            console.print("Exiting Search Mode. Goodbye!", style="bold yellow")
             break
+        elif query.lower() == '/menu':
+            console.print("Returning to main menu...", style="bold yellow")
+            return  # This will return control to hub_mode
         
         result = search_module.search(query)
         console.print("Search Results:", style="bold")
-        render_markdown(result)
+        render_markdown(result, console)
 
 # Example usage (can be removed if not needed)
 if __name__ == "__main__":
-    search_module = SearchModule()
-    query = input("Enter your search query: ")
-    result = search_module.search(query)
-    render_markdown(result)
+    config = load_config()
+    from rich.console import Console
+    console = Console()
+    search_mode(config, console)
 
 __all__ = ['SearchModule', 'search_mode']

@@ -10,11 +10,7 @@ from dotenv import load_dotenv
 from groq import Groq
 
 # Import your custom modules
-from src.services.file_service import (
-    read_json_file, write_json_file, ensure_directory_exists,
-    append_to_command_history, read_command_history,
-    update_cheat_sheet, get_cheat_sheet_value, initialize_cheat_sheet
-)
+from src.services.file_service import initialize_cheat_sheet, update_cheat_sheet, read_json_file
 from src.services.groq_api import GroqService
 from src.services.tavily_api import TavilyService
 from src.ui.display import (
@@ -36,11 +32,16 @@ logging.basicConfig(filename='assistant.log', level=logging.INFO, format='%(asct
 # Initialize SystemInfo
 system_info = SystemInfo()
 
+# Initialize the cheat sheet if it doesn't exist
+initialize_cheat_sheet(Path.home() / ".croqli_cheatsheet.json")
+
 # Initialize an empty list to keep the history of commands and their contexts
 command_history = []
 COMMAND_HISTORY_LENGTH = 10
 
 def assistant_mode(config, console):
+    cheat_sheet = read_json_file(Path.home() / ".croqli_cheatsheet.json")
+    # Use cheat_sheet data to personalize the assistant's responses
 
     # Your assistant mode implementation here
     pass
@@ -209,7 +210,14 @@ try:
     shell_name, operating_system = detect_shell_and_os()
 
     while True:
-        user_prompt = input("Query:> ")
+        user_input = input("Query:> ")
+
+        # Handle the /add command
+        if user_input.startswith("/add"):
+            handle_add_command(user_input, Path.home() / ".croqli_cheatsheet.json")
+        else:
+            # Process other commands or queries as usual
+            pass
 
         # Exit check
         if user_prompt.lower().strip() in ['exit', 'quit']:
@@ -239,6 +247,7 @@ try:
             stdout, stderr, exit_code = execute_command(command)
 
             if exit_code == 0:
+                update_cheat_sheet(Path.home() / ".croqli_cheatsheet.json", "installed_apps", {"python": python_version})
                 update_command_history(user_prompt, command, True, stdout)
                 print("Command executed successfully.")
                 print("Command output:")
@@ -263,3 +272,16 @@ except Exception as e:
     traceback.print_exc()
 
 __all__ = ['search_module', 'assistant_mode']
+
+def handle_add_command(user_input: str, cheat_sheet_path: Path):
+    """Handle the /add command to add information to the cheat sheet."""
+    if user_input.startswith("/add"):
+        question_to_add = user_input.replace("/add ", "").strip()
+        if question_to_add:
+            update_cheat_sheet(cheat_sheet_path, "useful_questions", [question_to_add])
+            print("Added to your cheat sheet!")
+        else:
+            print("Please specify the question to add.")
+    else:
+        print("Unknown command. Try /add followed by the question.")
+
