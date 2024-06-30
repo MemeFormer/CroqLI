@@ -1,8 +1,8 @@
 # croqli/src/config.py
 
 import os
-from dotenv import load_dotenv
 from pathlib import Path
+from dotenv import load_dotenv, set_key
 
 # Define brand colors
 BRAND_PRIMARY = "#F55036"  # Orange
@@ -85,6 +85,20 @@ class Config:
         }
 
 def load_config():
+    env_path = Path('.env')
+    if not env_path.exists():
+        groq_key = inquirer.prompt([
+            inquirer.Text('groq_key', message="Please enter your GROQ API key:")
+        ])['groq_key']
+        tavily_key = inquirer.prompt([
+            inquirer.Text('tavily_key', message="Please enter your Tavily API key:")
+        ])['tavily_key']
+
+        env_path.touch()  # Create the .env file
+        set_key(str(env_path), 'GROQ_API_KEY', groq_key)
+        set_key(str(env_path), 'TAVILY_API_KEY', tavily_key)
+
+    load_dotenv()
     """Load and validate the configuration."""
     config = Config()
     config.validate()
