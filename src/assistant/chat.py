@@ -13,24 +13,16 @@ import click
 # Load environment variables
 load_dotenv()
 
-# Define default settings
-DEFAULT_SETTINGS = {
-    "GROQ_MODEL": "mixtral-8x7b-32768",
-    "MAX_TOKENS": "8192",
-    "TEMPERATURE": "0.7",
-    "TOP_P": "1.0",
-    "SYSTEM_PROMPT": ""
-}
 
 def load_or_create_env():
     """Load or create environment variables."""
     if not os.path.exists('.env'):
         with open('.env', 'w') as file:
-            for key, value in DEFAULT_SETTINGS.items():
+            for key, value in config.DEFAULT_SETTINGS.items():
                 file.write(f"{key}={value}\n")
     load_dotenv()
 
-def get_groq_response(groq_service, input_text, history):
+def get_groq_response(groq_service, input_text, history, DEFAULT_SETTINGS):
     """Get the GROQ response."""
     groq_model = os.getenv("GROQ_MODEL", DEFAULT_SETTINGS["GROQ_MODEL"])
     max_tokens = int(os.getenv("MAX_TOKENS", DEFAULT_SETTINGS["MAX_TOKENS"]))
@@ -69,7 +61,7 @@ def chat_mode(config, console):
         if input_text.lower() == 'exit':
             break
 
-        response = get_groq_response(groq_service, input_text, history)
+        response = get_groq_response(groq_service, input_text, history, config.DEFAULT_SETTINGS)
         console.print("Response:", style="bold green")
         render_markdown(response, console)
         history.append({"role": "user", "content": input_text})

@@ -25,7 +25,7 @@ from src.assistant.chat import chat_mode
 from src.assistant.search import search_mode
 from src.assistant.system_info import SystemInfo
 from src.config import load_config
-
+print("Debug: Entering src/assistant/cli_assistant.py")
 # Setup logging
 logging.basicConfig(filename='assistant.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -39,12 +39,7 @@ initialize_cheat_sheet(Path.home() / ".croqli_cheatsheet.json")
 command_history = []
 COMMAND_HISTORY_LENGTH = 10
 
-def assistant_mode(config, console):
-    cheat_sheet = read_json_file(Path.home() / ".croqli_cheatsheet.json")
-    # Use cheat_sheet data to personalize the assistant's responses
 
-    # Your assistant mode implementation here
-    pass
 
 # Detect shell and operating system
 def detect_shell_and_os():
@@ -130,7 +125,7 @@ Environment Information:
 - Operating System: {operating_system}
 - Open Command:Continuing from where the script left off:
 
-```python
+
 - Open Command: {platform_data.get("open_command", "unknown")}
 - Default Browser: {platform_data.get("browser", "unknown")}
 
@@ -189,90 +184,6 @@ def suggest_similar_commands(user_prompt):
         for i, suggestion in enumerate(suggestions, 1):
             print(f"{i}. {suggestion}")
 
-# Activate the virtual environment
-venv_path = '/Users/Shared/Relocated Items/Docs_dump/visual studio code projects/CLI_assistant/my_env'
-activate_script = os.path.join(venv_path, 'bin', 'activate')
-activate_script = shlex.quote(activate_script)
-subprocess.run(f'source {activate_script}', shell=True, check=True)
-
-# Load environment variables
-env_path = Path('/Users/Shared/Relocated Items/Docs_dump/visual studio code projects/CLI_assistant/.env')
-load_dotenv(dotenv_path=env_path)
-
-try:
-    load_dotenv() 
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("GROQ_API_KEY not found in environment variables.")
-
-    client = Groq(api_key=api_key)
-
-    shell_name, operating_system = detect_shell_and_os()
-
-    while True:
-        user_input = input("Query:> ")
-
-        # Handle the /add command
-        if user_input.startswith("/add"):
-            handle_add_command(user_input, Path.home() / ".croqli_cheatsheet.json")
-        else:
-            # Process other commands or queries as usual
-            pass
-
-        # Exit check
-        if user_prompt.lower().strip() in ['exit', 'quit']:
-            break
-
-        # Suggest similar commands
-        suggest_similar_commands(user_prompt)
-
-        system_prompt = generate_system_prompt(shell_name, operating_system)
-        chat_completion = client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            model="mixtral-8x7b-32768",
-            temperature=0.1,
-            max_tokens=32768,
-            response_format={"type": "json_object"}
-        )
-
-        response_json = chat_completion.choices[0].message.content
-
-        try:
-            command_dict = json.loads(response_json)
-            command = command_dict['command']
-            print(f"Running command [{command}] ...")
-            stdout, stderr, exit_code = execute_command(command)
-
-            if exit_code == 0:
-                update_cheat_sheet(Path.home() / ".croqli_cheatsheet.json", "installed_apps", {"python": python_version})
-                update_command_history(user_prompt, command, True, stdout)
-                print("Command executed successfully.")
-                print("Command output:")
-                print(stdout)
-            else:
-                helpful_tips = provide_helpful_tips(command, stderr)
-                update_command_history(user_prompt, command, False, error=helpful_tips)
-                print("Error executing command:")
-                print(helpful_tips)
-                handle_error_and_retry(user_prompt, helpful_tips, shell_name, operating_system)
-        except json.JSONDecodeError as e:
-            print(f"Error parsing response as JSON: {e}")
-            print(f"Response JSON: {response_json}")
-            print("Tip: Please ensure your input is clear, or try simplifying your request.")
-        except Exception as e:
-            print(f"Error: {e}")
-            traceback.print_exc()
-            print("Tip: An unexpected error occurred. Please try again.")
-
-except Exception as e:
-    print(f"Error: {e}")
-    traceback.print_exc()
-
-__all__ = ['search_module', 'assistant_mode']
-
 def handle_add_command(user_input: str, cheat_sheet_path: Path):
     """Handle the /add command to add information to the cheat sheet."""
     if user_input.startswith("/add"):
@@ -284,4 +195,97 @@ def handle_add_command(user_input: str, cheat_sheet_path: Path):
             print("Please specify the question to add.")
     else:
         print("Unknown command. Try /add followed by the question.")
+
+
+# Activate the virtual environment
+venv_path = '/Users/Shared/Relocated Items/Docs_dump/visual studio code projects/CLI_assistant/my_env'
+activate_script = os.path.join(venv_path, 'bin', 'activate')
+activate_script = shlex.quote(activate_script)
+subprocess.run(f'source {activate_script}', shell=True, check=True)
+
+# Load environment variables
+#env_path = Path('/Users/Shared/Relocated Items/Docs_dump/visual studio code projects/CLI_assistant/.env')
+#load_dotenv(dotenv_path=env_path)
+
+# src/assistant/cli_assistant.py
+
+def cli_assistant_mode(config, console):
+    """
+    Implement the command-line interface logic here.
+    This is the main entry point for the "CLI Assistant" mode.
+    """
+    try:
+        load_dotenv() 
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("GROQ_API_KEY not found in environment variables.")
+
+        client = Groq(api_key=api_key)
+
+        shell_name, operating_system = detect_shell_and_os()
+
+        while True:
+            user_input = input("Query:> ")
+
+            # Handle the /add command
+            if user_input.startswith("/add"):
+                handle_add_command(user_input, Path.home() / ".croqli_cheatsheet.json")
+            else:
+                # Process other commands or queries as usual
+                pass
+
+            # Exit check
+            if user_input.lower().strip() in ['exit', 'quit', '/menu']:
+                break
+
+            # Suggest similar commands
+            suggest_similar_commands(user_input)
+
+            system_prompt = generate_system_prompt(shell_name, operating_system)
+            chat_completion = client.chat.completions.create(
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_input}
+                ],
+                model="mixtral-8x7b-32768",
+                temperature=0.1,
+                max_tokens=32768,
+                response_format={"type": "json_object"}
+            )
+
+            response_json = chat_completion.choices[0].message.content
+
+            try:
+                command_dict = json.loads(response_json)
+                command = command_dict['command']
+                print(f"Running command [{command}] ...")
+                stdout, stderr, exit_code = execute_command(command)
+
+                if exit_code == 0:
+                    update_cheat_sheet(Path.home() / ".croqli_cheatsheet.json", "installed_apps",) # {"python": python_version})
+                    update_command_history(user_input, command, True, stdout)
+                    print("Command executed successfully.")
+                    print("Command output:")
+                    print(stdout)
+                else:
+                    helpful_tips = provide_helpful_tips(command, stderr)
+                    update_command_history(user_input, command, False, error=helpful_tips)
+                    print("Error executing command:")
+                    print(helpful_tips)
+                    handle_error_and_retry(user_input, helpful_tips, shell_name, operating_system)
+            except json.JSONDecodeError as e:
+                print(f"Error parsing response as JSON: {e}")
+                print(f"Response JSON: {response_json}")
+                print("Tip: Please ensure your input is clear, or try simplifying your request.")
+            except Exception as e:
+                print(f"Error: {e}")
+                traceback.print_exc()
+                print("Tip: An unexpected error occurred. Please try again.")
+
+    except Exception as e:
+        print(f"Error: {e}")
+        traceback.print_exc()
+
+# Export the cli_assistant_mode function
+__all__ = ['cli_assistant_mode']
 

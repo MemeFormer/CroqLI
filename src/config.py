@@ -1,8 +1,9 @@
 # croqli/src/config.py
-
+import inquirer
 import os
 from pathlib import Path
 from dotenv import load_dotenv, set_key
+
 
 # Define brand colors
 BRAND_PRIMARY = "#F55036"  # Orange
@@ -10,31 +11,43 @@ BRAND_SECONDARY = "#CCCCCC"  # Light gray
 BRAND_TEXT = "#FFFFFF"  # White for text on primary background
 BRAND_DARK = "#666666"  # Darker gray
 
-# Predefined system prompts as profiles
-SYSTEM_PROMPTS = [
-    {"title": "Friendly Assistant", "prompt": "You are a helpful and friendly assistant."},
-    {"title": "Technical Support", "prompt": "You are a technical support specialist, ready to solve complex issues."},
-    {"title": "Creative Writer", "prompt": "You are a creative writer, full of imagination and vivid descriptions."},
-    {"title": "Data Analyst", "prompt": "You are a data analyst, providing insights and detailed analysis."},
-    {"title": "Casual Conversation", "prompt": "You are here for a casual chat, keeping the tone light and friendly."}
-]
+
+
+
+
 
 class Config:
     def __init__(self):
         # Load environment variables
         load_dotenv()
 
+        self.SYSTEM_PROMPTS = [
+            {"title": "Friendly Assistant", "prompt": "You are a helpful and friendly assistant."},
+            {"title": "Technical Support", "prompt": "You are a technical support specialist, ready to solve complex issues."},
+            {"title": "Creative Writer", "prompt": "You are a creative writer, full of imagination and vivid descriptions."},
+            {"title": "Data Analyst", "prompt": "You are a data analyst, providing insights and detailed analysis."},
+            {"title": "Casual Conversation", "prompt": "You are here for a casual chat, keeping the tone light and friendly."}
+        ]
+
+        self.DEFAULT_SETTINGS = {
+            "GROQ_MODEL": "mixtral-8x7b-32768",
+            "MAX_TOKENS": "8192",
+            "TEMPERATURE": "0.7",
+            "TOP_P": "1.0",
+            "SYSTEM_PROMPT": ""
+        }
+
         # API Keys
         self.groq_api_key = os.getenv('GROQ_API_KEY')
         self.tavily_api_key = os.getenv('TAVILY_API_KEY')
 
-        # GROQ Model settings
-        self.groq_model = os.getenv('GROQ_MODEL', 'llama3-8b-8192')
-        self.max_tokens = int(os.getenv('MAX_TOKENS', '8192'))
-        self.temperature = float(os.getenv('TEMPERATURE', '0.7'))
-        self.top_p = float(os.getenv('TOP_P', '1.0'))
-        self.system_prompt = os.getenv('SYSTEM_PROMPT', SYSTEM_PROMPTS[0]["prompt"])
-        self.system_prompt_title = os.getenv('SYSTEM_PROMPT_TITLE', SYSTEM_PROMPTS[0]["title"])
+       # DEFAULT_SETTINGS dictionary to set default values
+        self.groq_model = os.getenv('GROQ_MODEL', self.DEFAULT_SETTINGS["GROQ_MODEL"])
+        self.max_tokens = int(os.getenv('MAX_TOKENS', self.DEFAULT_SETTINGS["MAX_TOKENS"]))
+        self.temperature = float(os.getenv('TEMPERATURE', self.DEFAULT_SETTINGS["TEMPERATURE"]))
+        self.top_p = float(os.getenv('TOP_P', self.DEFAULT_SETTINGS["TOP_P"]))
+        self.system_prompt = os.getenv('SYSTEM_PROMPT', self.DEFAULT_SETTINGS["SYSTEM_PROMPT"])
+        
 
         # Tavily search settings
         self.tavily_search_depth = os.getenv('TAVILY_SEARCH_DEPTH', 'advanced')
@@ -52,6 +65,9 @@ class Config:
         self.brand_secondary = BRAND_SECONDARY
         self.brand_text = BRAND_TEXT
         self.brand_dark = BRAND_DARK
+
+    def get(self, key, default=None):
+        return getattr(self, key, default)
 
     def validate(self):
         """Validate the configuration settings."""
@@ -104,19 +120,11 @@ def load_config():
     config.validate()
     return config
 
-# Default settings for the chat model
-DEFAULT_SETTINGS = {
-    "model": "llama3-8b-8192",
-    "max_tokens": 8192,
-    "temperature": 0.7,
-    "top_p": 1.0,
-    "system_prompt": SYSTEM_PROMPTS[0]["prompt"],
-    "system_prompt_title": SYSTEM_PROMPTS[0]["title"]
-}
 
-# Example usage
-if __name__ == "__main__":
-    config = load_config()
-    print(config.to_dict())
-    print("Default Settings:", DEFAULT_SETTINGS)
-    print("System Prompts:", SYSTEM_PROMPTS)
+
+## Example usage
+#if __name__ == "__main__":
+    #config = load_config()
+    #print(config.to_dict())
+    #print("Default Settings:", config.DEFAULT_SETTINGS)
+    #print("System Prompts:", config.SYSTEM_PROMPTS)

@@ -6,21 +6,36 @@ from rich.table import Table
 from rich.syntax import Syntax
 from rich.text import Text
 from typing import List, Dict
+
+from rich.theme import Theme
 from .theme import *
 from rich.markdown import Markdown
 
 
 # Define console at the module level
-console = Console()
 
-def render_markdown(text: str, custom_console: Console = None):
-    """Render markdown text to the given console (or the default one)."""
+
+def create_custom_theme(config):
+    return Theme({
+        "info": config.brand_primary,
+        "warning": config.brand_secondary,
+        "danger": "red",
+        "success": "green",
+    })
+
+
+def render_markdown(text: str, console: Console, config):
+    custom_theme = create_custom_theme(config)
+    styled_console = Console(theme=custom_theme)
     md = Markdown(text)
-    (custom_console or console).print(md)
+    styled_console.print(md)
+
+    # Debug: Print using explicit colors
+    print(f"[{config.brand_primary}]This should be in the primary color (orange)[/{config.brand_primary}]")
+    print(f"[{config.brand_secondary}]This should be in the secondary color (light gray)[/{config.brand_secondary}]")
 
 
 console = Console()
-
 def print_welcome_message():
     """Display a welcome message to the user."""
     welcome_text = Text("Welcome to the Groq CLI Assistant!", style=TITLE_STYLE)

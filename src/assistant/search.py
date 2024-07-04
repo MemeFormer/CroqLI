@@ -38,6 +38,7 @@ class SearchModule:
             return f"An error occurred during the search: {str(e)}"
 
 def search_mode(config, console):
+    print("Debug: Entering search mode")
     search_module = SearchModule(config)
     
     console.print("Welcome to Search Mode. Type '/menu' to return to the main menu or 'exit' to quit.", style="bold blue")
@@ -54,13 +55,13 @@ def search_mode(config, console):
         
         result = search_module.search(query)
         console.print("Search Results:", style="bold")
-        render_markdown(result, console)
+        render_markdown(result, console, config)
 
 # Example usage (can be removed if not needed)
-if __name__ == "__main__":
-    config = load_config()
-    from rich.console import Console
-    console = Console()
-    search_mode(config, console)
+#if __name__ == "__main__":
+    #config = load_config()
+    #from rich.console import Console
+    #console = Console()
+    #search_mode(config, console)
 
 __all__ = ['SearchModule', 'search_mode']
