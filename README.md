@@ -3,6 +3,7 @@ Document the current state:
 UPDATE TO DO LIST:
 
 What's currently working (the menu on start up) 🆗
+
 recently fixed:
 
 1. search✅
