@@ -1,4 +1,5 @@
 # croqli/src/config.py
+
 import inquirer
 import os
 from pathlib import Path
@@ -35,6 +36,13 @@ class Config:
             "TEMPERATURE": "0.7",
             "TOP_P": "1.0",
             "SYSTEM_PROMPT": ""
+        }
+
+        self.model_max_tokens = {
+            "llama3-8b-8192": 8192,
+            "llama3-70b-8192": 8192,
+            "mixtral-8x7b-32768": 32768,
+            "gemma-7b-it": 8192
         }
 
         # API Keys
@@ -76,6 +84,31 @@ class Config:
         if not self.tavily_api_key:
             raise ValueError("TAVILY_API_KEY is not set in the environment variables.")
         
+    def save_to_env(self, key, value):
+        set_key('.env', key, str(value))
+        setattr(self, key.lower(), value)
+
+    def update_model_settings(self, model=None, max_tokens=None, temperature=None, top_p=None):
+        if model:
+            self.save_to_env('GROQ_MODEL', model)
+        if max_tokens is not None:
+            self.save_to_env('MAX_TOKENS', max_tokens)
+        if temperature is not None:
+            self.save_to_env('TEMPERATURE', temperature)
+        if top_p is not None:
+            self.save_to_env('TOP_P', top_p)
+
+    def update_api_keys(self, groq_key=None, tavily_key=None):
+        if groq_key:
+            self.save_to_env('GROQ_API_KEY', groq_key)
+        if tavily_key:
+            self.save_to_env('TAVILY_API_KEY', tavily_key)
+
+    def update_system_prompts(self, prompts):
+        self.SYSTEM_PROMPTS = prompts
+        self.save_to_env('SYSTEM_PROMPT', prompts[0]['prompt'])
+        self.save_to_env('SYSTEM_PROMPT_TITLE', prompts[0]['title'])
+
         # Add more validation as needed
 
     def to_dict(self):
@@ -117,7 +150,6 @@ def load_config():
     load_dotenv()
     """Load and validate the configuration."""
     config = Config()
-    config.validate()
     return config
 
 

@@ -19,7 +19,7 @@ class GroqService:
 
     def generate_response(self, messages: List[ChatMessage]) -> str:
         response = self.client.chat.completions.create(
-            model=self.model_params.model_name,
+            model=self.model_params.model,
             messages=[{"role": msg.role, "content": msg.content} for msg in messages],
             max_tokens=self.model_params.max_tokens,
             temperature=self.model_params.temperature,

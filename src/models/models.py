@@ -2,9 +2,13 @@
 
 from pydantic import BaseModel
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 # src/models/models.py
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
 
 class SearchResult(BaseModel):
     query: str
@@ -21,10 +25,13 @@ class LLMModelParams(BaseModel):
     top_p: float
 
 class LLMModelParams(BaseModel):
-    model_name: str
+    model: str = Field(..., alias="model_name")
     max_tokens: int
     temperature: float
     top_p: float
+
+    class Config:
+        allow_population_by_field_name = True
 
 class SystemPrompt(BaseModel):
     title: str
