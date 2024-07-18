@@ -1,4 +1,4 @@
-# croqli/src/models.py
+# croqli/src/models/models.py
 
 from pydantic import BaseModel
 from typing import List, Optional
@@ -10,15 +10,6 @@ class SearchResult(BaseModel):
     query: str
     context: str
     summary: str
-
-# Add any other model classes you need here
-
-class LLMModelParams(BaseModel):
-    model_config = ConfigDict(protected_namespaces=())
-    model_name: str
-    max_tokens: int
-    temperature: float
-    top_p: float
 
 class LLMModelParams(BaseModel):
     model_name: str
@@ -47,13 +38,19 @@ class AssistantResponse(BaseModel):
     source: str  # e.g., "chat", "search", "system"
     confidence: Optional[float]
 
+class SystemPrompt(BaseModel):
+    title: str
+    prompt: str
+
 class UserProfile(BaseModel):
     preferred_model: str
     favorite_prompts: List[str]
     search_frequency: float  # e.g., how often the user tends to need search results
+    max_tokens: int
+    temperature: float
+    top_p: float
 
 class AssistantConfig(BaseModel):
     llm_params: LLMModelParams
     system_prompts: List[SystemPrompt]
     user_profile: Optional[UserProfile]
-

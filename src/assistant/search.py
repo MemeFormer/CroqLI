@@ -57,11 +57,4 @@ def search_mode(config, console):
         console.print("Search Results:", style="bold")
         render_markdown(result, console, config)
 
-# Example usage (can be removed if not needed)
-#if __name__ == "__main__":
-    #config = load_config()
-    #from rich.console import Console
-    #console = Console()
-    #search_mode(config, console)
-
 __all__ = ['SearchModule', 'search_mode']

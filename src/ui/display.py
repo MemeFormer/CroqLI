@@ -1,4 +1,4 @@
-# src/ui/display.py
+# croqli/src/ui/display.py
 
 from rich.console import Console
 from rich.panel import Panel

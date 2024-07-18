@@ -5,13 +5,14 @@ import traceback
 import json
 import platform
 import logging
+import inquirer
 from pathlib import Path
 from dotenv import load_dotenv
-from groq import Groq
-
+from groq import Client, Groq
+from src.main import cheat_sheet_menu
 # Import your custom modules
-from src.services.file_service import initialize_cheat_sheet, update_cheat_sheet, read_json_file
-from src.services.groq_api import GroqService
+from src.services.file_service import CheatSheet, write_json_file
+from src.services.groq_api import Groq#Service
 from src.services.tavily_api import TavilyService
 from src.ui.display import (
     print_welcome_message, print_command_output, print_error_message,
@@ -33,7 +34,7 @@ logging.basicConfig(filename='assistant.log', level=logging.INFO, format='%(asct
 system_info = SystemInfo()
 
 # Initialize the cheat sheet if it doesn't exist
-initialize_cheat_sheet(Path.home() / ".croqli_cheatsheet.json")
+write_json_file(Path.home() / ".croqli_cheatsheet.json")
 
 # Initialize an empty list to keep the history of commands and their contexts
 command_history = []
@@ -52,6 +53,21 @@ def detect_shell_and_os():
     operating_system = platform.system().lower()
 
     return shell_name, operating_system
+
+def handle_cheat_sheet_action(config, choice):
+    if choice == 'View':
+        config.cheat_sheet.view()
+    elif choice == 'Edit (manually)':
+        config.cheat_sheet.edit_manually()
+    elif choice == 'Edit (AI-assisted)':
+        config.cheat_sheet.edit_ai_assisted(config.groq_service.generate_response)
+    elif choice == 'Update (auto-run)':
+        config.cheat_sheet.update_auto_run(config)
+    elif choice == 'Add categories':
+        category_name = inquirer.prompt([
+            inquirer.Text('category', message="Enter new category name:")
+        ])['category']
+        config.cheat_sheet.add_category(category_name)
 
 def execute_command(command):
     """Execute a shell command and return the output and exit code."""
@@ -139,7 +155,7 @@ def handle_error_and_retry(user_prompt, error_message, shell_name, operating_sys
     """Handle errors by requesting a new command based on the error message."""
     retry_prompt = f"The last command failed with the following error: {error_message}. Please modify the command to fix the error."
     system_prompt = generate_system_prompt(shell_name, operating_system)
-    chat_completion = client.chat.completions.create(
+    chat_completion = Client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
             {"role": "user", "content": retry_prompt}
@@ -184,17 +200,20 @@ def suggest_similar_commands(user_prompt):
         for i, suggestion in enumerate(suggestions, 1):
             print(f"{i}. {suggestion}")
 
-def handle_add_command(user_input: str, cheat_sheet_path: Path):
-    """Handle the /add command to add information to the cheat sheet."""
-    if user_input.startswith("/add"):
-        question_to_add = user_input.replace("/add ", "").strip()
-        if question_to_add:
-            update_cheat_sheet(cheat_sheet_path, "useful_questions", [question_to_add])
-            print("Added to your cheat sheet!")
-        else:
-            print("Please specify the question to add.")
-    else:
-        print("Unknown command. Try /add followed by the question.")
+#def handle_add_command(user_input: str, cheat_sheet_path: Path):
+    #"""Handle the /add command to add information to the cheat sheet."""
+    #if user_input.startswith("/add"):
+        #question_to_add = user_input.replace("/add ", "").strip()
+        #if question_to_add:
+            #if 'useful_questions' not in self.cheat_sheet.data:
+                #self.cheat_sheet.data['useful_questions'] = []
+            #self.cheat_sheet.data['useful_questions'].append(question_to_add)
+            #self.cheat_sheet.save()
+            #print("Added to your cheat sheet!")
+        #else:
+            #print("Please specify the question to add.")
+    #else:
+        #print("Unknown command. Try /add followed by the question.")
 
 
 # Activate the virtual environment
@@ -223,35 +242,38 @@ def cli_assistant_mode(config, console):
         client = Groq(api_key=api_key)
 
         shell_name, operating_system = detect_shell_and_os()
+        cheat_sheet = CheatSheet(config.cheat_sheet_path)
+
 
         while True:
             user_input = input("Query:> ")
 
-            # Handle the /add command
-            if user_input.startswith("/add"):
-                handle_add_command(user_input, Path.home() / ".croqli_cheatsheet.json")
-            else:
-                # Process other commands or queries as usual
-                pass
-
-            # Exit check
             if user_input.lower().strip() in ['exit', 'quit', '/menu']:
                 break
+            elif user_input == "/cheat_sheet":
+                cheat_sheet_menu(config)
+            #elif user_input.startswith("/add"):
+                #handle_add_command(user_input, cheat_sheet)
+            else:
+                # Process other commands or queries as usual
+                suggest_similar_commands(user_input)
 
-            # Suggest similar commands
-            suggest_similar_commands(user_input)
+                system_prompt = generate_system_prompt(shell_name, operating_system)
+                cheat_sheet_context = cheat_sheet.get_context()
+                
+                # Include cheat sheet context in the system prompt
+                system_prompt += f"\n\nCheat Sheet Context: {json.dumps(cheat_sheet_context)}"
 
-            system_prompt = generate_system_prompt(shell_name, operating_system)
-            chat_completion = client.chat.completions.create(
+                chat_completion = client.chat.completions.create(
                     messages=[
                         {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_input}
-                ],
-                model="mixtral-8x7b-32768",
-                temperature=0.1,
-                max_tokens=32768,
-                response_format={"type": "json_object"}
-            )
+                        {"role": "user", "content": user_input}
+                    ],
+                    model="mixtral-8x7b-32768",
+                    temperature=0.1,
+                    max_tokens=32768,
+                    response_format={"type": "json_object"}
+                )
 
             response_json = chat_completion.choices[0].message.content
 
@@ -262,7 +284,7 @@ def cli_assistant_mode(config, console):
                 stdout, stderr, exit_code = execute_command(command)
 
                 if exit_code == 0:
-                    update_cheat_sheet(Path.home() / ".croqli_cheatsheet.json", "installed_apps",) # {"python": python_version})
+                    cheat_sheet.data["installed_apps"]["python"] = platform.python_version(), cheat_sheet.save()
                     update_command_history(user_input, command, True, stdout)
                     print("Command executed successfully.")
                     print("Command output:")

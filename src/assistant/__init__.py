@@ -1,6 +1,6 @@
 # croqli/src/assistant/__init__py 
-print("Debug: Entering src/assistant/__init__.py")
 
+print("Debug: Entering src/assistant/__init__.py")
 
 from .chat import chat_mode
 from .cli_assistant import cli_assistant_mode

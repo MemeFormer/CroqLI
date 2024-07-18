@@ -1,4 +1,4 @@
-# src/assistant/utils.py
+# croqli/src/assistant/utils.py
 
 import httpx
 import os

@@ -5,7 +5,6 @@ from src.models.models import LLMModelParams, ChatMessage
 from src.config import load_config
 from typing import List
 
-
 class GroqService:
     def __init__(self):
         self.config = load_config()

@@ -5,6 +5,13 @@ from typing import List, Dict, Any
 from .theme import PRIMARY_COLOR, SECONDARY_COLOR
 from pathlib import Path
 from src.services.file_service import update_cheat_sheet
+from src.config import Config
+
+def save_system_prompts(config: Config):
+    config.save_system_prompts()
+
+def load_system_prompts(config: Config):
+    config.load_system_prompts()
 
 # Use the default theme and modify it
 default_theme = inquirer.themes.Default()

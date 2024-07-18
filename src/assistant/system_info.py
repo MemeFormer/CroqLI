@@ -5,56 +5,55 @@ import json
 import platform
 import subprocess
 from pathlib import Path
-from src.services.file_service import read_json_file, write_json_file
-import sys
-from src.services.file_service import read_json_file, write_json_file
+from src.services.file_service import CheatSheet
+
+
 
 
 class SystemInfo:
     def __init__(self):
-        self.cheat_sheet_path = Path.home() / '.croqli_cheatsheet.json'
-        self.cheat_sheet = self.load_cheat_sheet()
+        self.cheat_sheet = CheatSheet(Path.home / '.croqli_cheatsheet.json')  # Correct instantiation
 
     def load_cheat_sheet(self):
-        if self.cheat_sheet_path.exists():
-            return read_json_file(self.cheat_sheet_path)
-        else:
-            return self.initialize_cheat_sheet()
+        return self.cheat_sheet.data
+       
 
-    def save_cheat_sheet(self, cheat_sheet):
-        write_json_file(self.cheat_sheet_path, cheat_sheet)
+    def save_cheat_sheet(self, cheat_sheet_data):
+        self.cheat_sheet.data = cheat_sheet_data
+        self.cheat_sheet.save()
 
     def check_brew_installed(self):
         return subprocess.call(['which', 'brew'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
 
     def update_cheat_sheet(self, key, value):
-        self.cheat_sheet[key] = value
-        self.save_cheat_sheet(self.cheat_sheet)
+        self.cheat_sheet.data[key] = value
+        self.save_cheat_sheet(self.cheat_sheet.data)
 
     def get_cheat_sheet_value(self, key):
-        return self.cheat_sheet.get(key)
+        return self.cheat_sheet.data.get(key)
 
     def add_favorite_directory(self, directory):
         favorites = self.get_cheat_sheet_value("favorite_directories")
         if directory not in favorites:
             favorites.append(directory)
-            self.update_cheat_sheet("favorite_directories", favorites)
+            self.cheat_sheet.data["favorite_directories"] = favorites
+            self.cheat_sheet.save()
 
     def remove_favorite_directory(self, directory):
         favorites = self.get_cheat_sheet_value("favorite_directories")
         if directory in favorites:
             favorites.remove(directory)
-            self.update_cheat_sheet("favorite_directories", favorites)
+            self.update_cheat_sheet["favorite_directories"] = favorites
+            self.cheat_sheet.save()
 
-    def check_brew_installed(self):
-        return subprocess.call(['which', 'brew'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
-
+   
     def collect_system_info(self):
         # This method can be expanded to collect more system information
-        self.update_cheat_sheet("os", platform.system())
-        self.update_cheat_sheet("python_path", sys.executable)
-        self.update_cheat_sheet("brew_installed", self.check_brew_installed())
-        self.update_cheat_sheet("system_info_collected", True)
+        self.cheat_sheet.data["os"], platform.system()
+        self.cheat_sheet.data["python_path"], sys.executable
+        self.cheat_sheet.data["brew_installed"], self.check_brew_installed()
+        self.cheat_sheet.data["system_info_collected"], True
+        self.cheat_sheet.save()
 
     def get_brew_list(self):
         if self.get_cheat_sheet_value("brew_installed"):
@@ -67,13 +66,14 @@ class SystemInfo:
 
     def update_brew_list(self):
         brew_list = self.get_brew_list()
-        self.update_cheat_sheet("brew_list", brew_list)
+        self.cheat_sheet.data["brew_list"] = brew_list
+        self.cheat_sheet.save()
 
     def suggest_updates(self):
         suggestions = []
         if not self.get_cheat_sheet_value("system_info_collected"):
             suggestions.append("Collect initial system information")
-        if self.get_cheat_sheet_value("brew_installed") and "brew_list" not in self.cheat_sheet:
+        if self.get_cheat_sheet_value("brew_installed") and "brew_list" not in self.cheat_sheet.data:
             suggestions.append("Update Homebrew package list")
         # Add more suggestions as needed
         return suggestions
