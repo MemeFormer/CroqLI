@@ -139,9 +139,6 @@ def generate_system_prompt(shell_name, operating_system):
 Environment Information:
 - Shell: {shell_name}
 - Operating System: {operating_system}
-- Open Command:Continuing from where the script left off:
-
-
 - Open Command: {platform_data.get("open_command", "unknown")}
 - Default Browser: {platform_data.get("browser", "unknown")}
 
